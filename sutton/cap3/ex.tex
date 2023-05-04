@@ -19,7 +19,9 @@
 
 \maketitle
 
-\textbf{Exercício 3.1}  
+\textbf{Exercício 3.1} 
+
+\textbf{Senhoras Courier}: Um coletivo de mulheres
 \vspace{5mm}
 
 \textbf{Exercício 3.2} 
@@ -35,5 +37,90 @@
 \vspace{5mm}
 
 \textbf{Exercício 3.6} 
+\vspace{5mm}
+
+\textbf{Exercício 3.7} 
+ Não tem
+\vspace{5mm}
+
+\textbf{Exercício 3.8} Referindo ao diagrama 3.4b, obtemos,
+\[
+  q_{\pi}(s,a) = \sum_{s',r}^{} p(s',r|s,a)[r+\gamma \sum_{a' \in \mathcal{A}(s')}^{} \pi(a'|s') q_{\pi}(s',a')]
+.\] 
+
+A sequência de passos é semelhante àquela da seção da Demonstração da equação de Bellman do arquivo notex.tex. A diferença é que não condicionamos pelas ação tomadas, por isso a diferença no formato da equação.
+
+\vspace{5mm}
+
+
+\textbf{Exercício 3.9} \[
+  v_{meio}=\frac{1}{4}0.9(2.3+0.4-0.4+0.7)=0.675
+.\] 
+\vspace{5mm}
+
+\textbf{Exercício 3.10} Dado um histórico $S_0A_0R_0S_1A_1\ldots$:
+\[
+  G_t=\sum_{k=0}^{\infty} {\gamma}^k R_{t+k+1}
+\]
+\[
+  \overline{G_t} = \sum_{k=0}^{\infty} {\gamma}^{k} (R_{t+k+1}+c)=\sum_{k=0}^{\infty} {\gamma}^k R_{t+k+1} + \sum_{k=0}^{\infty} c{\gamma}^k = G_t + \frac{c}{1-\gamma}
+.\] 
+
+Logo, $v_c = \frac{c}{1-\gamma}$.
+
+\textbf{Exercício 3.11} De forma semelhante ao que foi feito na questão acima, obtemos
+\[
+  \overline{G_t} = G_t + \frac{c}{1-\gamma}(1-{\gamma}^{T-2t-1})
+.\]
+
+Então, a adição de uma constante às recompensas afeta o problema. Em particular, uma política ruim que faz o agente perder uma partida de xadrez mas demora muito gera recompensas possívelmente maiores do que uma política que ganha rapidamente uma partida.
+\vspace{5mm}
+\newpage
+\textbf{Exercício 3.12} Considerando o diagrama abaixo,
+\begin{figure}[htpb]
+  \centering
+  \includegraphics[width=0.4\textwidth]{imagens/3-12.jpeg}
+  \caption{Diagrama backup}
+  \label{fig:imagens-3-12-jpeg}
+\end{figure}
+
+obtemos,
+\[
+  v_{\pi}(s) \sum_{a \in \mathcal{A}(s)}^{} \pi(a|s) q_{\pi}(s,a) = \mathbb{E}_{\pi}[q_{\pi(s,S_{t+1})| S_t=s}]
+.\] 
+\vspace{5mm}
+
+\textbf{Exercício 3.13} \[
+  q_{\pi}(s,a) = \mathbb{E}[R_{t+1}|S_t=s,A_t=a] + \gamma \mathbb{E}_{\pi}[v_{\pi}(S_{t+1}) | S_t=s, A_t = a] = \sum_{s',r}^{} p(s',r|s,a)[r+\gamma v_{\pi}(s')]
+.\] 
+\vspace{5mm}
+
+
+
+\textbf{Exercício 3.18} Considerando o diagrama abaixo,
+\begin{figure}[htpb]
+  \centering
+  \includegraphics[width=0.4\textwidth]{imagens/3-18.jpeg}
+  \caption{Diagrama backup}
+  \label{fig:imagens-3-12-jpeg}
+\end{figure}
+
+obtemos,
+\[
+  v_{\star}(s)=\max_{a \in \mathcal{A}(s)} \{q_{\star}(s,a)\}
+.\] 
+
+\vspace{5mm}
+
+\textbf{Exercício 3.19} \[
+  q_{\star}(s,a)=\sum_{s',r}^{} p(s',r|s,a)[r+\gamma v_{\star}(s')]
+.\] 
+\vspace{5mm}
+
+
+\textbf{Exercício 3.20} 
+\vspace{5mm}
+
+\textbf{Exercício 3.21} 
 \vspace{5mm}
 \end{document}

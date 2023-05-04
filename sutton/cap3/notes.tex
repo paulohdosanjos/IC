@@ -99,11 +99,11 @@ Por outro lado, o estado não deve informar ao agente \texit{tudo} sobre o ambie
 O caso ideal está entre as duas situações: o estado resume sensações passadas de forma compacta, mas de uma forma tal que retém todas informações essenciais. Isso normalmente requer mais que sensações imediatas mas nunca mais do que o histórico completo de sensações passadas. Um sinal de estado que sucede em reter todas as informações essenciais é dito Markoviano. A definição formal vem abaixo. Por exemplo, a configuração atual de um tabuleiro de xadrez resume tudo que é importante sobre a sequência de jogadas que levaram até lá. Muita informação é perdida, mas tudo que realmente importa para o futuro do jogo é retido. Aqui, supomos que o conjunto de estados e de recompensas são finitos, para que possamos trabalhar com somas e probabilidades, em vez de integrais e densidades de probabilidade.
 
 A dinâmica de um ambiente pode ser determinada apenas se especificarmos a distribuição de probabilidades completa: \[
-  Pr\{S_{t+1} = s', R_{t+1} = r | S_0,A_0,R_1,\ldots,S_{t-1},A_{t-1},R_t,S_t,A_t\}
+  \Pr\{S_{t+1} = s', R_{t+1} = r | S_0,A_0,R_1,\ldots,S_{t-1},A_{t-1},R_t,S_t,A_t\}
 .\] 
 
 para todo $r$, $s'$ e todos os possíveis valores do histórico: $S_0,A_0,R_1,\ldots,S_{t-1},A_{t-1},R_t,S_t,A_t$. Se o sinal de estado possui a \texit{propriedade de Markov}, a resposta do ambiente em $t+1$ depende somente das representação de estado e ação no tempo $t$, de tal forma que a dinâmica do ambiente pode ser definida especificando somente \[
-  p(s',r|s,a)=Pr\{S_{t+1}=s',R_{t+1}=r|S_t,A_t\}
+  p(s',r|s,a)=\Pr\{S_{t+1}=s',R_{t+1}=r|S_t=s,A_t=a\}
 .\] 
 
 para todo $r$, $s'$, $S_t$ e $A_t$. Ou seja, o sinal de estado possui a propriedade de Markov e é um estado de Markov se, e somente se, as duas expressões acimas são iguais para todo $s'$, $r$, e para todos históricos.
@@ -120,7 +120,7 @@ Mas isso, na prática, é muito difícil de lembrar e analizar, e terá pouco ef
 Uma tarefa de aprendizagem por reforço que satisfaz a propriedade de Markov é chamada de \textit{Processo de decisão Markoviano}, ou \textit{MDP}. Um MDP é definido pelos conjuntos de estados e ações e pela dinâmica sequêncial do ambiente. Dado um estado $s$ e uma ação $a$, a probabilidade de cada possível par de próximo-estado-recompensa, $(s',r)$, é dado por
 
 \[
-  p(s',r|s,a)=Pr\{S_{t+1}=s',R_{t+1}=r|S_t=a,A_t=a\}
+  p(s',r|s,a)=\Pr\{S_{t+1}=s',R_{t+1}=r|S_t=a,A_t=a\}
 .\] 
 Essas quantidades especificam completamente a dinâmica de um MDP finito. Com esses valores, podemos calcular tudo sobre o ambiente. Por exemplo, as recompensas esperadas para um par estado-ação,
 
@@ -131,7 +131,7 @@ Essas quantidades especificam completamente a dinâmica de um MDP finito. Com es
 As probabilidades de transição,
 
 \[
-  p(s'|s,a)=Pr\{S_{t+1}=s'|S_t=s,A_t=a\} = \sum_{r \in \mathcal{R}} p(s',r|s,a)
+  p(s'|s,a)=\Pr\{S_{t+1}=s'|S_t=s,A_t=a\} = \sum_{r \in \mathcal{R}} p(s',r|s,a)
 .\] 
 
 E as recompensas esperadas para triplas estado-ação-próximo-estado,
@@ -157,14 +157,14 @@ Informalmente, \texit{funções valor} são funções dos estados (ou de pares e
 O \textit{valor} de um estado $s$ sob uma política $\pi$, denotado por $v_{\pi}(s)$ é o retorno esperado quando o agente começa no estado $s$ e segue a política $\pi$ após. Para MDPs, formalmente, temos,
 
 \[
-  v_{\pi}(s)=\mathbb{E}{\pi}[G_t | S_t=s]=\mathbb{E}{\pi}[\sum_{k=0}^{\infty} {\gamma}^k R_{t+k+1} | S_t = s] 
+  v_{\pi}(s)=\mathbb{E}_{\pi}[G_t | S_t=s]=\mathbb{E}_{\pi}[\sum_{k=0}^{\infty} {\gamma}^k R_{t+k+1} | S_t = s] 
 .\] 
 onde $E_{\pi}[.]$ denota o valor esperado de uma variável aleatória dado que o agente segue a política $\pi$, e $t$ é um tempo qualquer. A função $v_{\pi}$ é chamada de função valor de estado para a política $\pi$.
 
 Similarmente, definimos o valor de tomar a ação $a$ no estado $s$ sob a política $\pi$, denotado por $q_{\pi}(s,a)$, como sendo o retorno esperado quando o agente começa do estado $s$, toma a ação $a$ e segue a política $\pi$ após:
 
 \[
-  q_{\pi}(s,a)=\mathbb{E}{\pi}[G_t | S_t=s,A_t=a]=\mathbb{E}{\pi}[\sum_{k=0}^{\infty}{\gamma}^kR_{t+k+1}| S_t=s, A_t=a] 
+  q_{\pi}(s,a)=\mathbb{E}_{\pi}[G_t | S_t=s,A_t=a]=\mathbb{E}_{\pi}[\sum_{k=0}^{\infty}{\gamma}^kR_{t+k+1}| S_t=s, A_t=a] 
 .\] 
 
 $q_{\pi}$ é chamada de função valor de ação para a política $\pi$.
@@ -177,12 +177,12 @@ Funções valor obedecem algumas relações recursivas. Para qualquer política 
   v_{\pi}(s)&=\mathbb{E}_{\pi}[G_t|S_t=s]\\
             &=\mathbb{E}_{\pi}[\sum_{k=0}^{\infty} {\gamma}^kR_{t+k+1}|S_t=s]\\
             &=\mathbb{E}_{\pi}[R_{t+1}+\gamma\sum_{k=0}^{\infty} {\gamma}^kR_{t+k+2}|S_t=s]\\
-            &=\sum_{a}\pi(a|s) \sum_{s'}\sum_{r}p(s',r|s,a)[r+\gamma \mathbb{E}{\pi}[\sum_{k=0}^{\infty} {\gamma}^kR_{t+k+2}|S_{t+1}=s']]\\
+            &=\sum_{a}\pi(a|s) \sum_{s'}\sum_{r}p(s',r|s,a)[r+\gamma \mathbb{E}_{\pi}[\sum_{k=0}^{\infty} {\gamma}^kR_{t+k+2}|S_{t+1}=s']]\\
   \Aboxed{v_{\pi}(s)&=\sum_{a}\pi(a|s) \sum_{s',r}p(s',r|s,a)[r+\gamma v_{\pi}(s')]}
 \end{align*}
 .\] 
 
-Nas relações acima, está implícito que as ações são tomadas dentro do conjunto $\mathcal{A}(s)$, os estados dentro de $\mathcal{S}$, e recompensas de $\mathcal{R}$. A expressão final, a equação de \textit{Bellman} para $v_{\pi}$, é facilmente lida como um valor esperado. É uma soma sobre todos os valores possíveis de três variáveis, $a$, $s'$ e $r$. Para cada tripla $(a,s',r)$, computamos sua probabilidade, $\pi(a|s)p(s',r|s,a)$, e multiplicamos pelo peso entre colchetes. A equação relaciona o valor de um estado com o valor dos estados sucessores. O diagrama abaixo ilustra o conceito. Cada círculo aberto representa um estado e cada círculo preenchido representa um par estado-ação. Depois da ação, o ambiente responde com um estado $s'$ e uma recompensa $r$. A equação de Bellman faz a média de todas as possibilidades, com peso igual a probabilidade de uma resposta específica (estado s') acontecer. A equação essencialmente diz que o valor do estado inical é igual a soma do valor do próximo estado esperado (descontado) com a recompensa obtida no caminho para esse estado. O diagrama abaixo é chamado de um diagrama \textit{backup}. A função valor $v_{\pi}$ é a solução única para sua equação de Bellman. Essa equação forma uma base para várias formas de computar, aproximar e aprender $v_{\pi}$. Observe a distinção entre diagramas \textit{backup} e grafos de transição. Os vértices de estado nesses diagramas podem aparecer mais de uma vez. Omitimos arcos dirigidos nesses diagramas pois está implícito que a direção do tempo é de cima para baixo.
+Nas relações acima, está implícito que as ações são tomadas dentro do conjunto $\mathcal{A}(s)$, os estados dentro de $\mathcal{S}$, e recompensas de $\mathcal{R}$. A expressão final, a equação de \textit{Bellman} para $v_{\pi}$, é facilmente lida como um valor esperado. Uma demonstração mais passo-a-passo é dada na sub-seção abaixo. É uma soma sobre todos os valores possíveis de três variáveis, $a$, $s'$ e $r$. Para cada tripla $(a,s',r)$, computamos sua probabilidade, $\pi(a|s)p(s',r|s,a)$, e multiplicamos pelo peso entre colchetes. A equação relaciona o valor de um estado com o valor dos estados sucessores. O diagrama abaixo ilustra o conceito. Cada círculo aberto representa um estado e cada círculo preenchido representa um par estado-ação. Depois da ação, o ambiente responde com um estado $s'$ e uma recompensa $r$. A equação de Bellman faz a média de todas as possibilidades, com peso igual a probabilidade de uma resposta específica (estado s') acontecer. A equação essencialmente diz que o valor do estado inical é igual a soma do valor do próximo estado esperado (descontado) com a recompensa obtida no caminho para esse estado. O diagrama abaixo é chamado de um diagrama \textit{backup}. A função valor $v_{\pi}$ é a solução única para sua equação de Bellman. Essa equação forma uma base para várias formas de computar, aproximar e aprender $v_{\pi}$. Observe a distinção entre diagramas \textit{backup} e grafos de transição. Os vértices de estado nesses diagramas podem aparecer mais de uma vez. Omitimos arcos dirigidos nesses diagramas pois está implícito que a direção do tempo é de cima para baixo.
 
 \begin{figure}[htpb]
   \centering
@@ -204,21 +204,99 @@ A política do agente seleciona as quatro ações com igual probabilidade, isto 
 \end{figure}
 
 Algumas observações práticas: os valores dos estados perto das quinas inferiores são negativas pois a partir desses estados é provável que o agente esbarre na fronteira sob a política aleatória. O estado $A$ é o melhor para se estar, mas observe que seu valor é menor que $+10$. De fato, quando o agente transita de $A$ para $A'$, é provável que ele esbarre em uma fronteira. 
+\newpage
+\subsection{Demonstração da Equação de Bellman para $v_{\pi}$}
+Nessa seção faço um passo-a-passo da demonstração da equação de Bellman para $v_{\pi}$. 
 
+Partimos da definição de $v_{\pi}(s)$, o valor de um estado.
 
+\[
+  \begin{align*}
+    v_{\pi}(s) &= \mathbb{E}_{\pi}[G_{t}|S_t=s]\\
+               &=\mathbb{E}_{\pi}[R_{t+1}+\gamma G_{t+1} | S_t =s]\\
+               &=\mathbb{E}_{\pi}[R_{t+1}|S_t=s]+\gamma\mathbb{E}_{\pi}[G_{t+1} | S_t =s]\\
+  .\end{align*}
+.\] 
+
+Podemos calcular o primeiro termo da seguinte forma:
+\[
+    \begin{align*}
+               \mathbb{E}_{\pi}[R_{t+1}|S_t=s]&= \sum_{r \in \mathcal{R}} \Pr\{R_{t+1}=r|S_t=s\}
+    .\end{align*}  
+.\] 
+
+Temos que,
+\[
+  \Pr\{R_{t+1} = r | S_t = s\} = \sum_{a \in \mathcal{A}(s)} \Pr\{R_{t+1}=r|S_t=s,A_t=a\}\Pr\{A_t=a|S_t=s\}
+.\] 
+
+A ação que o agente toma é função somente do estado atual: $\Pr\{A_t=a|S_t=s\}=\pi(a|s)$. Então,
+
+\[
+\Pr\{R_{t+1} = r | S_t = s\} =\sum_{a \in \mathcal{A}(s)}\Pr\{R_{t+1}=r|S_t=s,A_t=a\}\pi(a|s)
+.\] 
+Por outro lado, podemos utilizar as funções probabilidades conjuntas da dinâmica do ambiente para escrever,
+\[
+  \Pr\{R_{t+1}| S_t=s,A_t=a\}=\sum_{s' \in \mathcal{S}}p(s',r|s,a)
+.\] 
+Portanto,
+\[
+\mathbb{E}_{\pi}[R_{t+1}|S_t=s]=\sum_{r \in \mathcal{R}}r \sum_{a \in \mathcal{A}(s)}\pi(a|s) \sum_{s' \in \mathcal{S}}p(s',r|s,a)
+,\] 
+
+que pode ser escrita de forma mais compacta:
+\[
+ \mathbb{E}_{\pi}[R_{t+1}|S_t=s]= \sum_{a \in \mathcal{A}(s)}\pi(a|s) \sum_{s',r}p(s',r|s,a)r
+
+.\] 
+Agora, calculamos o segundo termo de $v_{\pi}(s)$, $\gamma \mathbb{E}_{\pi}[G_{t+1}|S_t=s]$.
+ \[
+   \begin{align*}
+     \mathbb{E}_{\pi}[G_{t+1}|S_t=s]&=\sum_{g}g\Pr\{G_{t+1}=g| S_t =s \} = \sum_{g} g\sum_{s' \in \mathcal{S}}\Pr\{G_{t+1}=g|S_{t+1}=s'\}\Pr\{S_{t+1}=s'|S_t=s\}
+   .\end{align*}
+.\] 
+
+Além disso,
+\[
+  \Pr\{S_{t+1}=s'|S_t=s\}=\sum_{a \in \mathcal{A}(s)}\Pr\{S_{t+1}=s'|S_t=s,A_t=a\}\Pr\{A_t=a|S_t=s\}=\sum_{a \in \mathcal{A}(s)}\pi(a|s)\Pr\{S_{t+1}=s|S_t=s,A_t=a\}
+,\] 
+
+com,
+\[
+  \Pr\{S_{t+1}=s'|S_t=s,A_t=a\} = \sum_{r \in \mathcal{R}}\Pr\{S_{t+1}=s',R_{t+1}=r|S_t=s,A_t=a\}=\sum_{r in \mathcal{R}} p(s',r|s,a)
+.\] 
+
+Então,
+\[
+\Pr\{S_{t+1}=s'|S_t=s,A_t=a\}=\sum_{a \in \mathcal{A}(s)}\pi(a|s)\sum_{r in \mathcal{R}} p(s',r|s,a)
+
+.\] 
+
+Finalmente,
+\[
+  \mathbb{E}_{\pi}[G_{t+1}|S_t=s]=\sum_{g}g \sum_{s' \in \mathcal{S}}\Pr\{G_{t+1}=g|S_{t+1}=s'\} \sum_{a \in \mathcal{A}(s)}^{} \pi(a|s) \sum_{r \in \mathcal{R}}^{}p(s',r|s,a)  
+.\] 
+
+Podemos trocar a ordem das somas:
+\[
+  \mathbb{E}_{\pi}[G_{t+1}|S_t=s]=\sum_{a \in \mathcal{A}(s)}^{} \pi(a|s) \sum_{s',r}^{} p(s',r|s,a) \sum_{g}^{}g \Pr\{G_{t+1}=g|S_{t+1}=s'\} 
+.\] 
+Mas $\sum_{g}^{}g\Pr\{G_{t+1}=g|S_{t+1}=s'\} = \mathbb{E}_{\pi}[G_{t+1}|S_{t+1}=s']=v_{\pi}(s')$ 
+
+\[
+\square
+\] 
 \section{Função valor ótima}
 
 A grosso modo, resolver uma tarefa de aprendizagem por reforço é achar uma política $\pi$ que faz o agente atingir muita recompensa ao longo do processo completo. Para MDPs finitos, podemos definir precisamente o conceito de política ótima. 
 
 Podemos definir uma ideia de ordem parcial para políticas. Uma política $\pi$ é melhor que outra $\pi'$ se o seu retorno esperado é maior ou igual daquele de $\pi'$ para todos os estados $s$. Ou seja, $\pi \ge \pi' \leftrightarrow v_{\pi}(s) \ge v_{\pi'}(s)\ \forall s \in S$. Há pelo menos uma política que é melhor ou igual a todas outras políticas. Denotamos todas políticas ótimas por $\pi_{\star}$. Elas compartilham da mesma função valor de estado, chamada de \textit{função valor de estado ótima}, denotada por $v_{\star}$, definida por
-
 \[
-  v_{\star}(s)=max_{\pi}v_{\pi}(s),
+  v_{\star}(s)=\max_{\pi}v_{\pi}(s),
 \] 
-para todo estado $s \in S$. A equação acima é verdadeira mediante a definição de política ótima. Políticas ótimas também compartilham da mesma \textit{função valor de estado-ação ótima}, denotada por $q_{\star}$ e definida por
+para todo estado $s \in s$. A equação acima é verdadeira mediante a definição de política ótima. Políticas ótimas também compartilham da mesma \textit{função valor de estado-ação ótima}, denotada por $q_{\star}$ e definida por
 \[
-  q_{\star}(s,a)=max_{\pi}q_{\pi}(s,a),
-
+  q_{\star}(s,a)=\max_{\pi}q_{\pi}(s,a),
 .\] 
 
 para todo estado $s \in \mathcal{S}$ e $a \in \mathcal{A}(s)$. Para cada par $(s,a)$, essa função fornece o retorno esperado ao tomar a ação $a$ no estado $s$ e seguir uma política ótima após. Portanto, podemos escrever $q_{\star}$ em termos de $v_{\star}$ :
@@ -288,20 +366,20 @@ Em alguns casos, há muitos estados com baixa probabilidade de acontecerem e sel
 
 \textbf{Propriedade de Markov}
 \[
-  \Aboxed{Pr\{S_{t+1} = s', R_{t+1} = r | S_0,A_0,R_1,\ldots,S_{t-1},A_{t-1},R_t,S_t,A_t\}=Pr\{S_{t+1}=s',R_{t+1}=r|S_t,A_t\}}
+  \Aboxed{\Pr\{S_{t+1} = s', R_{t+1} = r | S_0,A_0,R_1,\ldots,S_{t-1},A_{t-1},R_t,S_t,A_t\}=\Pr\{S_{t+1}=s',R_{t+1}=r|S_t,A_t\}}
 .\] 
 
 \textbf{Dinâmica do ambiente}:
 
 As recompensas esperadas para um par estado-ação,
 \[
-  \Aboxed{r(s,a)=\mathbb{E}[R_{t+1} | S_t=s,A_t=a]=\sum_{r\in \mathcal{R}}r \sum_{s'\in \mathcal{S}} p(s',r|s,a)A}
+  \Aboxed{r(s,a)=\mathbb{E}[R_{t+1} | S_t=s,A_t=a]=\sum_{r\in \mathcal{R}}r \sum_{s'\in \mathcal{S}} p(s',r|s,a)}
 .\] 
 
 As probabilidades de transição,
 
 \[
-  \Aboxed{p(s'|s,a)=Pr\{S_{t+1}=s'|S_t=s,A_t=a\} = \sum_{r \in \mathcal{R}} p(s',r|s,a)}
+  \Aboxed{p(s'|s,a)=\Pr\{S_{t+1}=s'|S_t=s,A_t=a\} = \sum_{r \in \mathcal{R}} p(s',r|s,a)}
 .\] 
 
 E as recompensas esperadas para triplas estado-ação-próximo-estado,
@@ -326,6 +404,11 @@ Função valor de estado-ação:
 \[
   \Aboxed{v_{\pi}(s)&=\sum_{a}\pi(a|s) \sum_{s',r}p(s',r|s,a)[r+\gamma v_{\pi}(s')]}
 .\] 
+\[
+  \Aboxed{q_{\pi}(s,a) &= \sum_{s',r}^{} p(s',r|s,a) [r+\gamma \sum_{a' \in \mathcal{A}(s')}^{} \pi(a'|s') q_{\pi}(s',a')}
+.\] 
+
+\newpage
 
 \textbf{Equação de Bellman ótima}:
 \[
