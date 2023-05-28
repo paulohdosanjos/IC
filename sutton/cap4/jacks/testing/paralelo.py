@@ -85,6 +85,7 @@ def p(sf,r,s,a):
 
     return prob
 
+
 def main():
     P = {} #dictonary with non-zero probabilities
 
@@ -93,22 +94,45 @@ def main():
         for a in range(-min(y,MAX_MOVES),min(x,MAX_MOVES)+1):
             sum = 0
             r_max = -2*abs(a)+10*(min(x-a,MAX_ARG)+min(y+a,MAX_ARG))
-            for r in range(r_max+1):
+
+            for r in range(r_max+1): #a lot of invalid r's
+                num_request = (r+2*abs(a))//10
+
+                if(10*num_request != r + 2*abs(a)): #num_request not integer: invalid r
+                    continue
+
+                tmp = []
+                for p1 in range(min(x-a,MAX_ARG)+1): #condition (1)
+                    P1_ = P1(p1,x,a)
+                    P2_ = P2(num_request-p1,y,a)
+                    tmp.append(P1_*P2_)
+
+
                 for sf in S:
                     xf,yf = sf
                     #if(xf-x+a+p1 >= MAX_ARG or yf-y-a+p2 >= MAX_ARG):
                     #    continue
-                    prob = p(sf,r,s,a)
+                    prob_p = 0
+                    for p1 in range(min(x-a,MAX_ARG)+1): #condition (1)
+                        D1_ = D1(xf-x+a+p1,x,a,p1)
+                        D2_ = D2(num_request-p1+yf-y-a,y,a,num_request-p1)
+                        prob_p += D1_*D2_*tmp[p1]
+
+                    #prob = p(sf,r,s,a)
+                    #if(abs(prob-prob_p)>PROB_THRESHOLD):
+                    #    print("hell no")
+                    #    print(f"p[({sf[0]},{sf[1]}),{r},({s[0]},{s[1]}),{a}]={prob},p_paralelo[({sf[0]},{sf[1]}),{r},({s[0]},{s[1]}),{a}]={prob_p}")
+                        #return
+                    #print(f"p[({sf[0]},{sf[1]}),{r},({s[0]},{s[1]}),{a}]={prob},p_paralelo[({sf[0]},{sf[1]}),{r},({s[0]},{s[1]}),{a}]={prob_p}")
                     #sum += prob
-                    #print(f"P[({sf[0]},{sf[1]}),{r},({s[0]},{s[1]}),{a}]={prob}")
-                    if(prob > PROB_THRESHOLD):
-                        sum += prob
-                        #print(f"P[({sf[0]},{sf[1]}),{r},({s[0]},{s[1]}),{a}]={prob}")
-                        P[(sf[0],sf[1],r,s[0],s[1],a)] = prob
+                    #print(f"p[({sf[0]},{sf[1]}),{r},({s[0]},{s[1]}),{a}]={prob}")
+                    if(prob_p > PROB_THRESHOLD):
+                        sum += prob_p
+                        #print(f"p[({sf[0]},{sf[1]}),{r},({s[0]},{s[1]}),{a}]={prob}")
+                        P[(sf[0],sf[1],r,s[0],s[1],a)] = prob_p
         print(f"sum_prob({s}) = {sum}")
-    print(P)
+    print(p)
 
 if __name__ == "__main__":
     main()
-
 
