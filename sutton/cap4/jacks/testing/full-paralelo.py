@@ -18,30 +18,34 @@ ld2 = 2
 lp1 = 3
 lp2 = 4
 
+file = open("output.txt", "r")
+P = file.read()
+
+
 S = [] #set of states
 for i in range(MAX_CARS+1):
     for j in range(MAX_CARS+1):
         S.append([i,j])
 
 
-def P1(p1,x,a):
+def p1(p1,x,a):
     if(p1 < x-a):
         return poisson.pmf(p1,lp1)
     elif (p1 == x-a):
-        return 1 - poisson.cdf(p1,lp1) + poisson.pmf(p1,lp1) #Pr{P1 >= p1}
+        return 1 - poisson.cdf(p1,lp1) + poisson.pmf(p1,lp1) #pr{p1 >= p1}
     else:
         return 0
 
-def P2(p2,y,a):
+def p2(p2,y,a):
     if(p2 < y+a):
         return poisson.pmf(p2,lp2)
     elif (p2 == y+a):
-        return 1 - poisson.cdf(p2,lp2) + poisson.pmf(p2,lp2) #Pr{P2 >= p2}
+        return 1 - poisson.cdf(p2,lp2) + poisson.pmf(p2,lp2) #pr{p2 >= p2}
     else:
         return 0
 
-def D1(d1,x,a,p1):
-    if(d1 < MAX_CARS - (x-a-p1)):
+def d1(d1,x,a,p1):
+    if(d1 < max_cars - (x-a-p1)):
         return poisson.pmf(d1,ld1)
     elif(d1 == MAX_CARS - (x-a-p1)):
         return 1 - poisson.cdf(d1,ld1) + poisson.pmf(d1,ld1)
@@ -57,37 +61,84 @@ def D2(d2,y,a,p2):
         return 0
 
 def p(sf,r,s,a):
+    
 
-    xf, yf = sf
-    x , y = s
 
-    prob = 0
 
-    num_request = (r+2*abs(a))//10
+def policy_evaluation(V,pi):
+    n = len(V)
 
-    if(10*num_request != r + 2*abs(a)): #num_request not integer: invalid r
-        return 0
+    delta = 0
+    while(delta > THRESHOLD):
+        for i in range(n):
+            for j in range(n):
+                v = V[i][j]
+                
+                #updates V(s)
+                sum = 0
+                for ii in range(n):
+                    for jj in range(n):
+                        for r in R: 
+                            sum += P[ii,jj,r,i,j,pi[i][j]]*(r+GAMMA*V[ii][jj])
+                V[i][j] = sum
 
-    if(not(a >=-min(y,MAX_MOVES) and a <= min(x,MAX_MOVES))): #condition (2)
-       return 0
+                delta = max(delta, abs(v-V[i][j]))
+    print("policy evaluated!")
+    print(V)
 
-    for p1 in range(min(x-a,MAX_ARG)+1): #condition (1)
+    return
 
-        P1_ = P1(p1,x,a)
+def policy_improvement(V,pi):
+    print("improving policy...")
 
-        P2_ = P2(num_request-p1,y,a)
+    n = len(V)
+    policy_stable = True
 
-        D1_ = D1(xf-x+a+p1,x,a,p1)
+    for i in range(n):
+        for j in range(n):
+            print(f"V({i})({j})")
+            a = pi[i][j]
+            max_arg = a
+            max_sum = -INFTY
+            for a in range(A_MIN,A_MAX+1):
+                sum = 0
+                for ii in range(n):
+                    for jj in range(n):
+                        for r in R:
+                            print(f"({ii},{jj},{r})")
+                            sum += P[ii,jj,r,i,j,pi[i][j]]*(r+GAMMA*V[ii][jj])
+                            #print(f"p([{ii},{jj}],{r}|[{i},{j}],{pi[i][j]})={p([ii,jj],r,[i,j],pi[i][j])}")
 
-        D2_ = D2(num_request-p1+yf-y-a,y,a,num_request-p1)
+                if(sum > max_sum):
+                    max_arg = a
 
-        prob += P1_*P2_*D1_*D2_ 
+            pi[i][j] = max_arg
+            if(a != pi[i][j]):
+                policy_stable = False
 
-    return prob
 
+    if(not(policy_stable)):
+        policy_evaluation(V,pi)
+    else:
+        print("policy improved!")
+        print(pi)
+        return
 
 def main():
+    n = 1 + MAX_CARS
+    V = np.zeros((n,n)) #inicialize value function with zeroes
+    pi = np.zeros((n,n)) #inicialize policy with a = 20 for all s
+
+
+    policy_evaluation(V,pi)
+    policy_improvement(V,pi)
+
+    print(V)
+    print(pi)
+
+    return
     P = {} #dictonary with non-zero probabilities
+    total = 0
 
     for s in S:
         x,y = s
@@ -118,8 +169,11 @@ def main():
                         tmp_d1.append(tmp_p2[p1]*D1_)
 
                     for yf in range(MAX_CARS+1):
-                        #if(xf-x+a+p1 >= MAX_ARG or yf-y-a+p2 >= MAX_ARG):
-                        #    continue
+                        if(xf-x+a >= MAX_ARG or yf-y-a >= MAX_ARG):
+                            continue
+                        oti = xf+yf-x-y+num_request
+                        if(oti < 0 or oti > 1.2*MAX_ARG):
+                            continue
                         prob_p = 0 
                         #print(tmp)
                         for p1 in range(min(x-a,MAX_ARG)+1): 
@@ -130,17 +184,19 @@ def main():
                         #prob = p(sf,r,s,a)
                         #if(abs(prob-prob_p)>PROB_THRESHOLD):
                         #    print("hell no")
-                        #    print(f"p[({sf[0]},{sf[1]}),{r},({s[0]},{s[1]}),{a}]={prob},p_paralelo[({sf[0]},{sf[1]}),{r},({s[0]},{s[1]}),{a}]={prob_p}")
+                             #print(f"p[({sf[0]},{sf[1]}),{r},({s[0]},{s[1]}),{a}]={prob},p_paralelo[({sf[0]},{sf[1]}),{r},({s[0]},{s[1]}),{a}]={prob_p}")
                             #return
-                        #print(f"p[({sf[0]},{sf[1]}),{r},({s[0]},{s[1]}),{a}]={prob},p_paralelo[({sf[0]},{sf[1]}),{r},({s[0]},{s[1]}),{a}]={prob_p}")
+                        #print(f"p[({sf[0]},{sf[1]}),{r},({s[0]},{s[1]}),{a}]={prob_p}")
                         #sum += prob
                         #print(f"p[({sf[0]},{sf[1]}),{r},({s[0]},{s[1]}),{a}]={prob}")
                         if(prob_p > PROB_THRESHOLD):
                             sum += prob_p
                             #print(f"p[({sf[0]},{sf[1]}),{r},({s[0]},{s[1]}),{a}]={prob}")
                             P[(sf[0],sf[1],r,s[0],s[1],a)] = prob_p
-        print(f"sum_prob({s}) = {sum}")
-    print(p)
+        #print(f"sum_prob({s}) = {sum}")
+        total += 1
+        #print(f"{total}/{((MAX_CARS+1)*(MAX_CARS+1))}")
+    print(P)
 
 if __name__ == "__main__":
     main()
