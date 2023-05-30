@@ -1,6 +1,10 @@
+import json
 import numpy as np
 from scipy.stats import poisson
+import matplotlib
 import matplotlib.pyplot as plt
+matplotlib.use('module://matplotlib-backend-kitty')
+
 
 THRESHOLD = 0.1
 PROB_THRESHOLD = 0.0001
@@ -18,88 +22,158 @@ ld2 = 2
 lp1 = 3
 lp2 = 4
 
-file = open("output.txt", "r")
-P = file.read()
+with open("output.txt", "r") as file:
+    content = file.read()
+    content_corrigido = content.replace("(", "\"(")
+    content_corrigido = content_corrigido.replace(")", ")\"")
+#print(content_corrigido)
+P = json.loads(content_corrigido)
 
+#print(P)
 
 S = [] #set of states
 for i in range(MAX_CARS+1):
     for j in range(MAX_CARS+1):
         S.append([i,j])
 
-def p(sf,r,s,a):
+def p(xf,yf,r,x,y,a):
+    s = f"({xf}, {yf}, {r}, {x}, {y}, {a})"
+    if(s in P.keys()):
+        return P[s]
+    else: return 0
     
 
 def policy_evaluation(V,pi):
     n = len(V)
 
-    delta = 0
-    while(delta > THRESHOLD):
-        for i in range(n):
-            for j in range(n):
-                v = V[i][j]
-                
-                #updates V(s)
-                sum = 0
-                for ii in range(n):
-                    for jj in range(n):
-                        for r in R: 
-                            sum += P[ii,jj,r,i,j,pi[i][j]]*(r+GAMMA*V[ii][jj])
-                V[i][j] = sum
-
-                delta = max(delta, abs(v-V[i][j]))
-    print("policy evaluated!")
-    print(V)
+    print("evaluating policy...")
+    while(True):
+        delta = 0
+        total = 0
+        for s in S:
+            x,y = s
+            v = V[x][y]
+            a = int(pi[x][y])
+            #updates V(s)
+            sum = 0
+            for sf in S:
+                xf,yf = sf
+                r_max = -2*abs(a)+10*(min(x-a,MAX_ARG)+min(y+a,MAX_ARG))
+                for r in range(r_max+1):  #melhorar esse range
+                    #print(f"{p(xf,yf,r,x,y,a)},{(r+GAMMA*V[xf][yf])}")
+                    sum += p(xf,yf,r,x,y,a)*(r+GAMMA*V[xf][yf])
+            #print(f"sum = {sum}")
+            V[x][y] = sum
+            delta = max(delta, abs(v-V[x][y]))
+            total += 1
+            #print(f"{total}/{n*n}")
+    
+        if(delta < THRESHOLD):
+            break
+        else:
+            print(f"not done yet: delta = {delta}")
 
     return
 
-def policy_improvement(V,pi):
+def policy_improvement(V,pi,policy_stable):
     print("improving policy...")
 
     n = len(V)
     policy_stable = True
+    total = 0
 
-    for i in range(n):
-        for j in range(n):
-            print(f"V({i})({j})")
-            a = pi[i][j]
-            max_arg = a
-            max_sum = -INFTY
-            for a in range(A_MIN,A_MAX+1):
-                sum = 0
-                for ii in range(n):
-                    for jj in range(n):
-                        for r in R:
-                            print(f"({ii},{jj},{r})")
-                            sum += P[ii,jj,r,i,j,pi[i][j]]*(r+GAMMA*V[ii][jj])
-                            #print(f"p([{ii},{jj}],{r}|[{i},{j}],{pi[i][j]})={p([ii,jj],r,[i,j],pi[i][j])}")
+    for s in S:
+        x,y = s
+        a_past = pi[x][y]
+        max_arg = a_past
+        max_sum = -INFTY
+        for a in range(-min(y,MAX_MOVES),min(x,MAX_MOVES)+1):
+            sum = 0
+            for sf in S:
+                xf,yf = sf
+                r_max = -2*abs(a)+10*(min(x-a,MAX_ARG)+min(y+a,MAX_ARG))
+                for r in range(r_max+1):
+                    #print(f"({xf},{yf},{r})")
+                    sum += p(xf,yf,r,x,y,a)*(r+GAMMA*V[xf][yf])
+                    #print(f"p([{ii},{jj}],{r}|[{i},{j}],{pi[i][j]})={p([ii,jj],r,[i,j],pi[i][j])}")
 
-                if(sum > max_sum):
-                    max_arg = a
+            if(sum > max_sum):
+                max_arg = a
+                max_sum = sum
 
-            pi[i][j] = max_arg
-            if(a != pi[i][j]):
-                policy_stable = False
+        pi[x][y] = max_arg
+        if(a_past != pi[x][y]):
+            policy_stable = False
+        total += 1
+        if(total == (n*n)//4): print("25%")
+        if(total == (n*n)//2): print("50%")
+        if(4*total == 3*(n*n)): print("75%")
+        if(total == (n*n)): print("100%")
+        #print(f"{total}/{n*n}")
 
+    return
 
-    if(not(policy_stable)):
-        policy_evaluation(V,pi)
-    else:
-        print("policy improved!")
-        print(pi)
-        return
+def show(pi):
+
+    n = len(pi)
+
+    cmap = plt.cm.get_cmap('RdYlBu',11)
+    norm = plt.Normalize(-5, 5)  # Normalizar os valores de pi(x, y) entre -5 e 5
+
+    plt.imshow(pi,cmap = cmap, extent = [0,n-1,0,n-1])
+
+    cbar = plt.colorbar()
+    cbar.set_label('pi(x, y)')
+
+    # Configurar os rótulos dos eixos
+    plt.xticks(np.arange(n))
+    plt.yticks(np.arange(n))
+    plt.xlabel('x')
+    plt.ylabel('y')
+
+    # Configurar os limites dos eixos
+    plt.xlim(0, n-1)
+    plt.ylim(0, n-1)
+
+    plt.show()
 
 def main():
     n = 1 + MAX_CARS
     V = np.zeros((n,n)) #inicialize value function with zeroes
     pi = np.zeros((n,n)) #inicialize policy with a = 20 for all s
 
+    print()
+    print(f"pi[0]:\n {pi}")
+    show(pi)
 
-    policy_evaluation(V,pi)
-    policy_improvement(V,pi)
+    print()
+    print(f"V[0]:\n {V}")
 
-    print(V)
-    print(pi)
+    policy_stable = False
+    i = 1
+    while(not(policy_stable)):
+        policy_evaluation(V,pi)
+        print()
+        print("value function evaluated!")
+        print()
+        print(f"V[{i}]:\n {V}")
+        policy_improvement(V,pi,policy_stable)
+        i += 1
+        if(not(policy_stable)):
+            print()
+            print("policy improved!")
+            print()
+            print(f"pi[{i}]:\n {pi}")
+            show(pi)
+
+
+    print()
+    print("final policy")
+    print(f"pi[{i}]:\n {pi}")
+    show(pi)
+    print()
+    print("final value function")
+    print(f"V[{i}]:\n {V}")
 
     return
 
