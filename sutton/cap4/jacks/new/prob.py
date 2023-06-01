@@ -20,6 +20,7 @@ ld2 = 2
 lp1 = 3
 lp2 = 4
 
+n = MAX_CARS + 1 
 
 def P1_(p1,x,a):
     if(p1 < x-a):
@@ -58,30 +59,24 @@ def calc_p1():
     """
     calculate p(x'|x,a) matrix the right way, i hope
     """
-    n = MAX_CARS+1
     P1 = np.zeros((n,n,2*MAX_MOVES+1))
 
     for x in range(n):
-        i = 0 
         for a in range(-MAX_MOVES,MAX_MOVES+1):
+            i = MAX_MOVES + a
             if(x-a > MAX_CARS or a > x): 
-                i += 1
+                print(f"P1({xf}|{x},{a}) = {P1[xf][x][i]}, i = {i}")
                 continue
             sum = 0
             for xf in range(n):
                 if(xf == n-1): 
                     P1[xf][x][i] = 1 - sum
                     print(f"P1({xf}|{x},{a}) = {P1[xf][x][i]}, i = {i}")
-                    if( x == 19 and a == -1):
-                        print("here")
-                        print(P1[xf][x][i])
-                        print(i)
                     continue
+
                 P1[xf][x][i] = calc_p1_(xf,x,a)
                 print(f"P1({xf}|{x},{a}) = {P1[xf][x][i]}, i = {i}")
                 sum += P1[xf][x][i]
-            i += 1
-
     return P1
 
 
@@ -90,7 +85,6 @@ def calc_p1_(xf,x,a):
     calculate p(x'|x,a)
     """
     sum = 0
-    n = MAX_CARS + 1
     for p1 in range(x-a+1): #posso deixar mais rápido usando MAX_ARG
         #print(f"p1 = {p1}")
         A = P1_(p1,x,a)
@@ -104,14 +98,13 @@ def calc_p2():
     """
     calculate p(y'|y,a) matrix the right way, i hope
     """
-    n = MAX_CARS+1
     P2 = np.zeros((n,n,2*MAX_MOVES+1))
 
     for y in range(n):
         i = 0 
         for a in range(-MAX_MOVES,MAX_MOVES+1):
+            i = MAX_MOVES + a
             if(y+a > MAX_CARS or a < -y): 
-                i += 1
                 continue
             sum = 0
             for yf in range(n):
@@ -119,11 +112,9 @@ def calc_p2():
                     P2[yf][y][i] = 1 - sum
                     print(f"P2({yf}|{y},{a}) = {P2[yf][y][i]}, i = {i}")
                     continue
-                P2[yf][y][i] = calc_p1_(yf,y,a)
+                P2[yf][y][i] = calc_p2_(yf,y,a)
                 print(f"P2({yf}|{y},{a}) = {P2[yf][y][i]}, i = {i}")
                 sum += P2[yf][y][i]
-            i += 1
-
     return P2
 
 
@@ -146,7 +137,6 @@ def calc_p(P1,P2):
     """
     calculate p(s'|s,a) matrix
     """
-    n = MAX_CARS + 1
     P = np.zeros((n,n,n,n,2*MAX_MOVES+1))
     for xf in range(n):
         for yf in range(n):
@@ -166,13 +156,12 @@ def calc_r():
     """
     calculate r(s,a) matrix
     """
-    n = MAX_CARS + 1
     R = np.zeros((n,n,2*MAX_MOVES+1))
 
     for x in range(n):
         for y in range(n):
             for a in range(-MAX_MOVES,MAX_MOVES+1):
-                i = MAX_MOVES + 1
+                i = MAX_MOVES + a
                 if(y+a > MAX_CARS or x-a > MAX_CARS):
                     R[x][y][i] = 0
                     print(f"r(({x},{y}),{a}) = {R[x][y][i]}")
@@ -195,7 +184,6 @@ def calc_r_(x,y,a):
     return sum
 
 def policy_evaluation(V,pi,R,P):
-    n = MAX_CARS + 1 
 
     print("evaluating policy...")
     while(True):
@@ -213,8 +201,8 @@ def policy_evaluation(V,pi,R,P):
                     for yf in range(n):
                         sum += V[xf][yf]*P[xf][yf][x][y][i]
 
-                print(f"r(({x},{y}),{a}) = {R[x][y][i]}")
-                print(f"sum = {sum}")
+                #print(f"r(({x},{y}),{a}) = {R[x][y][i]}")
+                #print(f"sum = {sum}")
                 V[x][y] = R[x][y][i] + sum * GAMMA
                 delta = max(delta,abs(v-V[x][y]))
                 total += 1
@@ -225,12 +213,11 @@ def policy_evaluation(V,pi,R,P):
         else:
             print(f"not done yet: delta = {delta}")
 
-    return
+    return V
 
 def policy_improvement(V,pi,policy_stable,R,P):
     print("improving policy...")
 
-    n = MAX_CARS + 1 
     policy_stable = True
     total = 0
 
@@ -240,7 +227,7 @@ def policy_improvement(V,pi,policy_stable,R,P):
             max_arg = a_past
             max_sum = -INFTY
             for a in range(-MAX_MOVES,MAX_MOVES+1):
-                i = MAX_MOVES + 1
+                i = MAX_MOVES + a
                 sum = 0
                 for xf in range(n):
                     for yf in range(n):
@@ -263,41 +250,35 @@ def policy_improvement(V,pi,policy_stable,R,P):
 
 def show(pi):
 
-    n = len(pi)
+    plt.figure(figsize=(12, 10))
+    plot = plt.imshow(pi, cmap=plt.get_cmap("Blues"))
+    plt.gca().invert_yaxis()
 
-    cmap = plt.cm.get_cmap('RdYlBu',11)
-    norm = plt.Normalize(-5, 5)  # Normalizar os valores de pi(x, y) entre -5 e 5
+    bounds = np.arange(-MAX_MOVES, MAX_MOVES + 1)
 
-    plt.imshow(pi,cmap = cmap, extent = [0,n-1,0,n-1])
-
-    cbar = plt.colorbar()
-    cbar.set_label('pi(x, y)')
-
-    # Configurar os rótulos dos eixos
-    plt.xticks(np.arange(n))
-    plt.yticks(np.arange(n))
-    plt.xlabel('x')
-    plt.ylabel('y')
-
-    # Configurar os limites dos eixos
-    plt.xlim(0, n-1)
-    plt.ylim(0, n-1)
-
+    plt.colorbar(plot, boundaries=bounds, ticks=bounds)
+    plt.xlabel("Number of cars at P2")
+    plt.ylabel("Number of cars at P1")
+    plt.yticks(np.arange(0, 21, 5))
+    plt.xticks(np.arange(0, 21, 5))
     plt.show()
 
+#P2 = calc_p2()
+#P = calc_p(P1,P2) #p(s'|s,a)
+
 def main():
-
-    n = 1 + MAX_CARS
-
     P1 = calc_p1()
     P2 = calc_p2()
 
-    
+    P = calc_p(P1,P2)
+    R = calc_r()
     #print()
     #print()
 
+    #Testing P1 matrix
+
     #x = 19 
-    #a = -3 
+    #a = -1 
     #i = MAX_MOVES + a
     #sum = 0
     #for xf in range(n):
@@ -308,14 +289,18 @@ def main():
 
     #return
 
+    ##Testing P1 matrix sums
     #for x in range(n):
     #    for a in range(-MAX_MOVES,MAX_MOVES+1):
     #        #dado um x' e a 
-    #        i = +MAX_MOVES + a
+    #        i = MAX_MOVES + a
     #        sum = 0
     #        for xf in range(n):
     #            sum += P1[xf][x][i]
     #        print(f"sum(p(x',{x},{a}))= {sum}")
+
+    #print(P1[20][20][0])
+    #return
 
     #for y in range(n):
     #    for a in range(-MAX_MOVES,MAX_MOVES+1):
@@ -331,7 +316,6 @@ def main():
 
     #return
 
-    P = calc_p(P1,P2) #p(s'|s,a)
 
     #testing P
 
@@ -363,7 +347,35 @@ def main():
     #                    sum += P[xf][yf][x][y][i]
     #            print(f"sum(p(s'|({xf},{yf}),{a}))={sum}")
 
-    R = calc_r()
+
+    #Testing policy_evaluation with the right policy
+    pi = [[ 0,0,0,0,0,0,0,0,-1,-1,-2,-2,-2,-3,-3,-3,-3,-3,-4,-4,-4],
+ [ 0,0,0,0,0,0,0,0,0,-1,-1,-1,-2,-2,-2,-2,-2,-3,-3,-3,-3],
+ [ 0,0,0,0,0,0,0,0,0,0,0,-1,-1,-1,-1,-1,-2,-2,-2,-2,-2],
+ [ 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,-1,-1,-1,-1,-1,-2],
+ [ 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,-1,-1],
+ [ 1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+ [ 2,2,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+ [ 3,2,2,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+ [ 3,3,2,2,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+ [ 4,3,3,2,2,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+ [ 4,4,3,3,2,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+ [ 5,4,4,3,2,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+ [ 5,5,4,3,2,2,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+ [ 5,5,4,3,3,2,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+ [ 5,5,4,4,3,2,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+ [ 5,5,5,4,3,2,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0],
+ [ 5,5,5,4,3,2,2,1,0,0,0,0,0,0,0,0,0,0,0,0,0],
+ [ 5,5,5,4,3,3,2,1,1,0,0,0,0,0,0,0,0,0,0,0,0],
+ [ 5,5,5,4,4,3,2,2,1,1,1,1,1,0,0,0,0,0,0,0,0],
+ [ 5,5,5,5,4,3,3,2,2,2,2,2,1,1,1,1,0,0,0,0,0],
+ [ 5,5,5,5,4,4,3,3,3,3,3,2,2,2,2,1,1,1,0,0,0]]
+ 
+    show(pi)
+    V = np.zeros((n,n)) #inicialize value function with zeroes
+    V = policy_evaluation(V,pi,R,P)
+    print(V)
+    return
 
 
 
@@ -372,10 +384,24 @@ def main():
 
     print()
     print(f"pi[0]:\n {pi}")
-    #show(pi)
+    show(pi)
 
     print()
     print(f"V[0]:\n {V}")
+
+    #print(R)
+    #print(P)
+
+    #debugging policy evaluation
+    #print("oi")
+    #print(R[10][10][5])
+    #policy_evaluation(V,pi,R,P)
+    #print()
+    #print("value function evaluated!")
+    #print()
+    #print(f"V[{1}]:\n {V}")
+
+    #return
 
     policy_stable = False
     i = 1
@@ -386,19 +412,19 @@ def main():
         print()
         print(f"V[{i}]:\n {V}")
         policy_improvement(V,pi,policy_stable,R,P)
-        i += 1
         if(not(policy_stable)):
             print()
             print("policy improved!")
             print()
             print(f"pi[{i}]:\n {pi}")
-            #show(pi)
+            i += 1
+            show(pi)
 
 
     print()
     print("final policy")
     print(f"pi[{i}]:\n {pi}")
-    #show(pi)
+    show(pi)
     print()
     print("final value function")
     print(f"V[{i}]:\n {V}")
