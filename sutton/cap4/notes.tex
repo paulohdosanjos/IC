@@ -102,7 +102,78 @@ onde $\xlongrightarrow[]{\text{E}}$ denota uma avaliação de política e $\xlon
 Observe que há um bug. É possível que o algoritmo acima nunca termine, quando o processo fica alterando entre duas políticas igualmente boas (como isso é possível?). Note também que em cada avaliação de política, a função valor é inicializada com o valor da função da política anterior. Isso faz que o processo, em geral, convirga mais rapidamente.
 
 \subsection{Jack's Car Rental}
-Nessa seção, fazemos uma apresentação do problema \textit{Jack's Car Rental} junto com sua solução.
+Nessa seção, fazemos uma apresentação do problema \textit{Jack's Car Rental} junto com uma solução. A descrição do problema é a seguinte:
 
-O problema consiste 
+\begin{center}
+\boxed{
+\begin{minipage}{\textwidth}
+\textit{Jack manages two locations for a nationwide car rental company. Each day, some number of customers arrive at each location to rent cars. If Jack has a car available, he rents it out and is credited 10 by the national company. If he is out of cars at that location, then the business is lost. Cars become available for renting the day after they are returned. To help ensure that cars are available where they are needed, Jack can move them between the two locations overnight, at a cost of 2 per car moved. We assume that the number of cars requested and returned at each location are Poisson random variables, meaning that the probability that the number is , where is the expected number. Suppose is 3 and 4 for rental requests at the first and second locations and 3 and 2 for returns. To simplify the problem slightly, we assume that there can be no more than 20 cars at each location (any additional cars are returned to the nationwide company, and thus disappear from the problem) and a maximum of five cars can be moved from one location to the other in one night. We take the discount rate to be = 0.9 and formulate this as a continuing finite MDP, where the time steps are days, the state is the number of cars at each location at the end of the day, and the actions are the net numbers of cars moved between the two locations overnight.}
+\end{minipage}
+}
+\end{center}
+
+\newpage
+
+Para formular o problema como um MDP finito, definimos as seguintes variáveis aleatórias:
+
+$X_t = $ "\textit{quantidade de carros na localização 1 ($L_1$) ao fim do dia $t$, após contabilizar as transferências de carros entre localizações na noite do dia anterior e os pedidos e devoluções ao longo do dia $t$.}"
+
+$Y_t = $ "\textit{quantidade de carros na localização 2 ($L_2$) ao fim do dia $t$, após contabilizar as transferências de carros entre localizações na noite do dia anterior e os pedidos e devoluções ao longo do dia $t$.}"
+
+$A_t$ = \textit{"quantidade de carros movidos ao final da noite do dia $t$ da localização 1 para a localização 2"}
+
+Note que,
+\[
+-\min(y,MAX\_MOVES) \le A_t \le \min(x,MAX\_MOVES)
+,\] 
+
+onde $MAX\_MOVES = 5$ para essa instância do problema.
+
+
+$P_t^{(1)}$ = "\textit{quantidade total de pedidos concretizados ao longo do dia $t+1$."}
+
+O valor desse variável é limitado pela quantidade de carros disponíveis no início do dia $t+1$, $X_t-A_t$. Se  $\overline{P_t}^{(1)}$ é a quantidade de pedidos no dia $t+1$ (observe que essa quantidade pode ser maior que 20: é uma variável Poisson independente),
+\[
+P_t^{(1)} = \min(\overline{P_t}^{(1)}, X_t-A_t)
+.\] 
+
+Analogamente,
+\[
+P_t^{(2)} = \min(\overline{P_t}^{(2)}, Y_t+A_t)
+.\] 
+  $D_t^{(1)}$ = \textit{"quantidade total de devoluções concretizadas na localização 1 ao final do dia $t$."}
+
+  $D_t^{(2)}$ = \textit{"quantidade total de devoluções concretizadas na localização 2 ao final do dia $t$."}
+
+  Consideramos que o carros são devolvidos no final do dia, após terem sidos processados os pedidos naquele dia. Além disso, a quantidade final de carros na localização deve ser menor que $MAX\_CARS=20$. Então, se $\overline{D_t}^{(1)}$ é a quantidade de devoluções totais no dia $t+1$,
+  \[
+    D_t^{(1)} = \min(\overline{D_t}^{(1)},MAX\_CARS-(X_t-A_t-P_t^{(1)}))  
+  .\] 
+
+Analogamente,
+\[
+    D_t^{(2)} = \min(\overline{D_t}^{(2)},MAX\_CARS-(Y_t+A_t-P_t^{(2)}))  
+.\] 
+
+As variáveis $\overline{P_t}^{(1)}$, $\overline{P_t}^{(2)}$, $\overline{D_t}^{(1)}$ e $\overline{D_t}^{(2)}$ seguem distribuições de Poisson bem definidas, conforme a descrição do problema.
+
+$R_t$ = \textit{"recompensa ao final do dia $t$, contabilizando o custo de transferências de carros da noite do dia anterior $t$ e o lucro devido aos pedidos concretizados ao longo do dia $t+1$."}
+
+Dadas essas definições, podemos escrever as seguintes relações.
+\[
+  X_{t+1} = X_t - A_t + D_t^{(1)} - P_t^{(1)}
+\] 
+\[
+  Y_{t+1} = Y_t + A_t + D_t^{(2)} - P_t^{(2)}
+\] 
+\[
+  R_{t+1} = -2|A_t| + 10(P_t^{(1)} + P_t^{(2)})
+\] 
+
+Agora, descrevemos o MDP arcaboço para o problema. O estado do MDP é o par $S_t = (X_t,Y_t)$. Então, o conjunto de estados $S$ é dado por
+\[
+  S = \{(x,y) : x,y \in [0,MAX\_CARS]\}
+.\] 
+
+
 \end{document}
