@@ -1,188 +1,229 @@
 import numpy as np
 from scipy.stats import poisson
-import matplotlib.pyplot as plt
 
-THRESHOLD = 0.1
-PROB_THRESHOLD = 0.0001
-INFTY = 1000000000
-MAX_ARG = 15 # percent point function (0.999) for poisson distribution
 MAX_CARS = 20 # maximum number of cars in any location at a given time
 MAX_MOVES = 5 #maximum number of cars moves per night
-GAMMA = 0.9
-R_MIN = -2*MAX_MOVES
-R_MAX = 20*MAX_ARG+2*MAX_MOVES
-A_MIN = -MAX_MOVES
-A_MAX = MAX_MOVES
-ld1 = 3
-ld2 = 2
-lp1 = 3
-lp2 = 4
 
-R = [] #possible values of rewards
-for p in range(0,2*MAX_ARG + 1):
-    for a in range(A_MIN,A_MAX+1):
-        r = 10*p - 2*abs(a)
-        if(not(r in R)):
-            R.append(r)
+ld = [-100, 2, 3]
+lp = [-100, 4, 3]
 
-S = [] #set of states
-for i in range(MAX_CARS+1):
-    for j in range(MAX_CARS+1):
-        S.append([i,j])
+LOC_1 = -1
+LOC_2 = 1
 
+def dimension():
+    return MAX_CARS + 1
 
-
-
-def p(sf,r,s,a):
+def number_actions():
     """
-        p(s',r|s,a)
+    Number of possible actions in the jacks problem
     """
+    return 2 * MAX_MOVES + 1
 
-    xf, yf = sf
-    x , y = s
+def number_states():
+    return dimension()*dimension()
 
-    #print(f"s' = {sf}, r = {r}, s = {s}, a = {a}")
+def S_map():
+    """
+    Mappings from index to states
+    The array S has only one dimension. 
+    Example:
+        if the states are "alive", "dead", "almost dead", S has 3 elements and S could be: S = [ "alive", "dead", "almost dead" ]
+    """
+    n = dimension()
+    n_s = number_states()
+    S = np.empty(n_s, dtype = object)
+    for x in range(n):
+        for y in range(n):
+            s = (x,y)
+            i = n * x + y
+            s[i] = s
+    return S
+    
+def A_map():
+    """
+    Mappings from index to actions for the jacks problem
+    """
+    n_a = number_actions()
+    A = np.empty(n_a, dtype = int)
 
+    for i in range(n_a):
+        A[i] = -MAX_MOVES + i 
+        
+    return A
+    
+def testing_pi():
+    """
+     policy example for testing. Policy at iteration 5 of https://alexkozlov.com/post/jack-car-rental/
+    """
+    n_a = number_actions() # size of pi array
+    n_s = number_states()
+
+    
+    pi = np.array( [ [0,0,0,0,0,0,0,0,-1,-1,-2,-2,-2,-3,-3,-3,-3,-3,-4,-4,-4,
+           0,0,0,0,0,0,0,0,0,-1,-1,-1,-2,-2,-2,-2,-2,-3,-3,-3,-3,
+           0,0,0,0,0,0,0,0,0,0,0,-1,-1,-1,-1,-1,-2,-2,-2,-2,-2,
+           0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,-1,-1,-1,-1,-1,-2,
+           0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,-1,-1,
+           1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+           2,2,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+           3,2,2,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+           3,3,2,2,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+           4,3,3,2,2,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+           4,4,3,3,2,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+           5,4,4,3,2,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+           5,5,4,3,2,2,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+           5,5,4,3,3,2,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+           5,5,4,4,3,2,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+           5,5,5,4,3,2,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,
+           5,5,5,4,3,2,2,1,0,0,0,0,0,0,0,0,0,0,0,0,0,
+           5,5,5,4,3,3,2,1,1,0,0,0,0,0,0,0,0,0,0,0,0,
+           5,5,5,4,4,3,2,2,1,1,1,1,1,0,0,0,0,0,0,0,0,
+           5,5,5,5,4,3,3,2,2,2,2,2,1,1,1,1,0,0,0,0,0,
+           5,5,5,5,4,4,3,3,3,3,3,2,2,2,2,1,1,1,0,0,0]])
+    if(n_a != len(pi)): print("erro 1")
+    if(n_s != len(pi[0])): print("erro 2")
+
+    return pi
+
+
+def r(_s,_a):
+    """
+    expected reward given index action _a in index state _s
+    """
+    S_ = S_map()
+    s = S_[_s]
+    A_ = A_map()
+    a = A_[_a]
+
+
+def compute_R():
+    """
+    Computes r(s,a) matrix of expected rewards
+    """
+    n_s = number_states()
+    n_a = number_actions()
+
+    R = np.zeros((n_s,n_a))
+    for _s in range(n_s):
+        for _a in range(n_a):
+            #compute r(s,a)
+            R[_s][_a] = r(_s,_a)
+    return R
+
+def p_max(z,a,LOC):
+    """
+    returns maximum number of requests in a certains LOC
+    """
+    return z + LOC * a
+
+def P(p,z,a,LOC):
+    """
+    returns Pr{P_t^{1} = p1} and
+            Pr{P_t^{2} = p2}
+    """
+    _p_max = p_max(z,a,LOC)
+
+    if(p < _p_max): return poisson.pmf(p,lp[LOC])
+    elif(p == _p_max): return 1 - poisson.cdf(p,lp[LOC]) + poisson.pmf(p,lp[LOC])
+    else: return 0
+
+def D(d,p,z,a,LOC):
+    """
+    returns Pr{D_t^{1} = x'-x+a-p1} and
+            Pr{D_t^{2} = y'-y-a-p2}
+    """
+    _p_max = p_max(z,a,LOC)
+
+    _d_max = MAX_CARS + p -_p_max
+
+    if(d < _d_max): return poisson.pmf(d,ld[LOC])
+    elif(d == _d_max): return 1 - poisson.cdf(d,ld[LOC]) + poisson.pmf(d,ld[LOC])
+    else: return 0
+
+
+def p_fat(zf,z,a,LOC):
+    """
+    returns p(x'|x,a) if LOC = LOC1 
+    returns p(y'|y,a) if LOC = LOC2 
+    não verifica a validade de "a"
+    """
     sum = 0
 
-    num_request = (r+2*abs(a))/10
+    _p_max = p_max(z,a,LOC)
 
-    #print(f"número total de requests = {tot_requests}")
-
-    for d1 in range(MAX_ARG):
-        #print(f"d1 = {d1}")
-
-        D1 = poisson.pmf(d1,ld1)
-        D2 = poisson.pmf(-d1 + xf - x + yf - y + num_request, ld2)
-        P1 = poisson.pmf(d1 + x - xf - a, lp1)
-        P2 = poisson.pmf(-d1 + xf - x + a + num_request, lp2)
-
-        #print(f"D1 = {D1}, D2 = {D2}, P1 = {P1}, P2 = {P2}")
-
-        sum += D1*D2*P1*P2 
-
-        #print(f"+= {sum}")
+    for p in range(_p_max):
+        sum += D(zf,z,a,p,LOC) * P(z,a,p,LOC)
 
     return sum
 
 
-#calculating num_request range set with non tiny probabilities 
-NUM_REQUEST_SET = {}
-for n in range(0,2*MAX_ARG+1): #all possible values
-    prob = 0
-    for p1 in range(0,MAX_ARG + 1):
-        prob += poisson.pmf(n-p1,lp2)*poisson.pmf(p1,lp1)
-    if prob > PROB_THRESHOLD:
-        NUM_REQUEST_SET[n] = prob
-#print(NUM_REQUEST_SET)
-
-
-
-
-
-
-P = {} #dictonary with non-zero probabilities
-
-for s in S:
+def p(sf,s,a):
+    """
+    Returns p(s'|s,a)
+    """
+    xf,yf = sf
     x,y = s
-    sum = 0
-    for a in range(-min(y,MAX_MOVES),min(x,MAX_MOVES)+1):
-        for num_request in NUM_REQUEST_SET.keys(): #melhorar esse range
-            r = 10*num_request -2*abs(a)
-            for xf in range(x-a-num_request,x-a+MAX_ARG+1):
-                for yf in range(y+a-num_request,y+a+MAX_ARG+1):
-                    sf = [xf,yf]
-                    prob = p(sf,r,s,a)
-                    sum += prob
-                    if(xf > MAX_ARG or xf < 0 or yf > MAX_ARG or yf < 0):
-                        continue
-                    if(x-xf+y-yf > num_request):
-                        continue
-                    sf = [xf,yf]
-                    prob = p(sf,r,s,a)
-                    print(f"({sf},{r},{s},{a}):")
-                    if(prob > PROB_THRESHOLD):
-                        P[(sf[0],sf[1],r,s[0],s[1],a)] = prob
-                        print(f"P[({sf[0]},{sf[1]}),{r},({s[0]},{s[1]}),{a}]={prob}")
-    print(f"sum_prob({s}) = {sum}")
-print(P)
+
+    return p_fat(xf,x,a,LOC_1) * p_fat(yf,y,a,LOC_2)
 
 
-def policy_evaluation(V,pi):
-    n = len(V)
+def compute_P():
+    """
+    Compute matrix p[s'][s][a] which entries are p(s'|s,a)
+    """
+    n_s = number_states()
+    n_a = number_actions()
 
-    delta = 0
-    while(delta > THRESHOLD):
-        for i in range(n):
-            for j in range(n):
-                v = V[i][j]
-                
-                #updates V(s)
-                sum = 0
-                for ii in range(n):
-                    for jj in range(n):
-                        for r in R: 
-                            sum += p([ii,jj],r,[i,j],pi[i][j])*(r+GAMMA*V[ii][jj])
-                V[i][j] = sum
+    S_ = S_map()
+    A_ = A_map()
 
-                delta = max(delta, abs(v-V[i][j]))
-    print("policy evaluated!")
-    print(V)
+    P = np.zeros((n_s,n_s,n_a))
+    for _sf in range(n_s):
+        for _s in range(n_s):
+            for _a in range(n_a):
+                s = S_[_s] 
+                sf = S_[_sf]
+                a = A_[_a]
+                #compute p(s'|s,a)
+                P[_sf][_s][_a] = p(S_,A_,sf,s,a)
+    return P
 
-    return
+def gamma():
+    """
+    Discouting factor
+    """
+    return 0.9
 
-def policy_improvement(V,pi):
-    print("improving policy...")
+def threshold():
+    """
+    Threshold for policy evaluation
+    """
+    return 0.1
 
-    n = len(V)
-    policy_stable = True
+def print_V(V):
+    n = dimension() 
+    hbar = "-" * 45
+    print(hbar)
+    for x in range(n):
+        print("|", end = "")
+        for y in range(n):
+            i = n * x + y
+            print("{:7.2f}".format(V[i]), end = " |")
+        print()
+        print(hbar)
 
-    for i in range(n):
-        for j in range(n):
-            print(f"V({i})({j})")
-            a = pi[i][j]
-            max_arg = a
-            max_sum = -INFTY
-            for a in range(A_MIN,A_MAX+1):
-                sum = 0
-                for ii in range(n):
-                    for jj in range(n):
-                        for r in R:
-                            print(f"({ii},{jj},{r})")
-                            sum += p([ii,jj],r,[i,j],pi[i][j])*(r+GAMMA*V[ii][jj])
-                            print(f"p([{ii},{jj}],{r}|[{i},{j}],{pi[i][j]})={p([ii,jj],r,[i,j],pi[i][j])}")
+if __name__ == "__main__":
+    print("Test suit")
 
-                if(sum > max_sum):
-                    max_arg = a
+    print(f"dimension = {dimension()}\n")
+    print(f"total number of states = {number_states()}\n")
+    print(f"total number of possible actions = {number_actions()}\n")
 
-            pi[i][j] = max_arg
-            if(a != pi[i][j]):
-                policy_stable = False
+    #print("States mapping")
+    #print(S_map())
 
-
-    if(not(policy_stable)):
-        policy_evaluation(V,pi)
-    else:
-        print("policy improved!")
-        print(pi)
-        return
-
-def main():
-    #sf = [8,9]
-    #r = 44
-    #s = [10,4]
-    #a = 3
-    #print(f"p(s' = {sf}, r = {r} | s = {s}, a = {a}) = {p(sf,r,s,a)}")
-
-    n = 1 + MAX_CARS
-    V = np.zeros((n,n)) #inicialize value function with zeroes
-    pi = np.zeros((n,n)) #inicialize policy with a = 20 for all s
+    print("Actions map:")
+    print(A_map())
 
 
-    policy_evaluation(V,pi)
-    policy_improvement(V,pi)
 
-    return
-
-#if __name__ == "__main__":
-#    main()
