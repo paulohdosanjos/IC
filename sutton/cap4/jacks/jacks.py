@@ -10,6 +10,8 @@ lp = [-100, 4, 3]
 LOC_1 = -1
 LOC_2 = 1
 
+INVALID_ACTION = -100000
+
 def dimension():
     return MAX_CARS + 1
 
@@ -22,7 +24,7 @@ def number_actions():
 def number_states():
     return dimension()*dimension()
 
-def S_map():
+def state_map():
     """
     Mappings from index to states
     The array S has only one dimension. 
@@ -36,64 +38,46 @@ def S_map():
         for y in range(n):
             s = (x,y)
             i = n * x + y
-            s[i] = s
+            S[i] = s
     return S
     
-def A_map():
+def action_map():
     """
     Mappings from index to actions for the jacks problem
     """
-    n_a = number_actions()
-    A = np.empty(n_a, dtype = int)
+    A = np.array([-5,-4,-3,-2,-1,0,1,2,3,4,5])
 
-    for i in range(n_a):
-        A[i] = -MAX_MOVES + i 
-        
     return A
-    
-def testing_pi():
-    """
-     policy example for testing. Policy at iteration 5 of https://alexkozlov.com/post/jack-car-rental/
-    """
-    n_a = number_actions() # size of pi array
-    n_s = number_states()
 
-    
-    pi = np.array( [ [0,0,0,0,0,0,0,0,-1,-1,-2,-2,-2,-3,-3,-3,-3,-3,-4,-4,-4,
-           0,0,0,0,0,0,0,0,0,-1,-1,-1,-2,-2,-2,-2,-2,-3,-3,-3,-3,
-           0,0,0,0,0,0,0,0,0,0,0,-1,-1,-1,-1,-1,-2,-2,-2,-2,-2,
-           0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,-1,-1,-1,-1,-1,-2,
-           0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,-1,-1,
-           1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-           2,2,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-           3,2,2,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-           3,3,2,2,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-           4,3,3,2,2,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-           4,4,3,3,2,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-           5,4,4,3,2,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-           5,5,4,3,2,2,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-           5,5,4,3,3,2,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-           5,5,4,4,3,2,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-           5,5,5,4,3,2,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,
-           5,5,5,4,3,2,2,1,0,0,0,0,0,0,0,0,0,0,0,0,0,
-           5,5,5,4,3,3,2,1,1,0,0,0,0,0,0,0,0,0,0,0,0,
-           5,5,5,4,4,3,2,2,1,1,1,1,1,0,0,0,0,0,0,0,0,
-           5,5,5,5,4,3,3,2,2,2,2,2,1,1,1,1,0,0,0,0,0,
-           5,5,5,5,4,4,3,3,3,3,3,2,2,2,2,1,1,1,0,0,0]])
-    if(n_a != len(pi)): print("erro 1")
-    if(n_s != len(pi[0])): print("erro 2")
+def action_index(a):
+    return int(MAX_MOVES + a)
 
-    return pi
+def compute_loc_R(LOC):
+    """
+    compute R1[x][a] matrix for LOC = LOC1
+    compute R2[y][a] matrix for LOC = LOC2
+    """
+    if(LOC == LOC_1): LABEL = 1
+    else: LABEL = 2
 
 
-def r(_s,_a):
-    """
-    expected reward given index action _a in index state _s
-    """
-    S_ = S_map()
-    s = S_[_s]
-    A_ = A_map()
-    a = A_[_a]
+    n = dimension()
+    n_a = number_actions()
+    R_loc = np.zeros((n,n_a))
+    A_ = action_map()
+
+    for _z in range(dimension()):
+        for _a in range(n_a):
+            z = _z 
+            a = A_[_a]
+            _max_requests = max_requests(z,a,LOC)
+            sum = 0
+            for p in range(_max_requests + 1):
+                sum += p * request_prob(p,z,a,LOC)
+            R_loc[_z][_a] = sum
+            print(f"R{LABEL}[{z}][{a}]= {R_loc[_z][_a]}")
+    return R_loc
+            
 
 
 def compute_R():
@@ -102,46 +86,62 @@ def compute_R():
     """
     n_s = number_states()
     n_a = number_actions()
+    A_ = action_map()
+    S_ = state_map()
 
     R = np.zeros((n_s,n_a))
+    R1 = compute_loc_R(LOC_1)
+    R2 = compute_loc_R(LOC_2)
+
     for _s in range(n_s):
         for _a in range(n_a):
             #compute r(s,a)
-            R[_s][_a] = r(_s,_a)
+            x,y = S_[_s]
+            a = A_[_a]
+            s = S_[_s]
+            _x,_y = x,y
+            if(not(valid_action(a,x,y))):
+                R[_s][_a] = INVALID_ACTION
+                print(f"R[{s}][{a}]= {R[_s][_a]}")
+            else:
+                R[_s][_a] = 10*(R1[_x][_a]+R2[_y][_a]) - 2 * abs(a)
+                print(f"R[{s}][{a}]= {R[_s][_a]}")
     return R
 
-def p_max(z,a,LOC):
+def max_requests(z,a,LOC):
     """
     returns maximum number of requests in a certains LOC
     """
     return z + LOC * a
 
-def P(p,z,a,LOC):
+def request_prob(p,z,a,LOC):
     """
     returns Pr{P_t^{1} = p1} and
             Pr{P_t^{2} = p2}
+    suppouse valid action
     """
-    _p_max = p_max(z,a,LOC)
+    _max_requests = max_requests(z,a,LOC)
 
-    if(p < _p_max): return poisson.pmf(p,lp[LOC])
-    elif(p == _p_max): return 1 - poisson.cdf(p,lp[LOC]) + poisson.pmf(p,lp[LOC])
+    if(p < _max_requests): return poisson.pmf(p,lp[LOC])
+    elif(p == _max_requests): return 1 - poisson.cdf(p,lp[LOC]) + poisson.pmf(p,lp[LOC])
     else: return 0
 
-def D(d,p,z,a,LOC):
+def return_prob(d,p,z,a,LOC):
     """
     returns Pr{D_t^{1} = x'-x+a-p1} and
             Pr{D_t^{2} = y'-y-a-p2}
+    suppouse valid action
     """
-    _p_max = p_max(z,a,LOC)
+    _max_requests= max_requests(z,a,LOC)
 
-    _d_max = MAX_CARS + p -_p_max
+    _max_returns = MAX_CARS + p - _max_requests
 
-    if(d < _d_max): return poisson.pmf(d,ld[LOC])
-    elif(d == _d_max): return 1 - poisson.cdf(d,ld[LOC]) + poisson.pmf(d,ld[LOC])
+    if(d < _max_returns): return poisson.pmf(d,ld[LOC])
+    elif(d == _max_returns): return 1 - poisson.cdf(d,ld[LOC]) + poisson.pmf(d,ld[LOC])
     else: return 0
 
 
-def p_fat(zf,z,a,LOC):
+def loc_prob_transition(zf,z,a,LOC):
     """
     returns p(x'|x,a) if LOC = LOC1 
     returns p(y'|y,a) if LOC = LOC2 
@@ -149,23 +149,46 @@ def p_fat(zf,z,a,LOC):
     """
     sum = 0
 
-    _p_max = p_max(z,a,LOC)
+    _max_requests = max_requests(z,a,LOC)
 
-    for p in range(_p_max):
-        sum += D(zf,z,a,p,LOC) * P(z,a,p,LOC)
+    for p in range(_max_requests+1):
+        sum += request_prob(p,z,a,LOC) * return_prob(zf-z+p-LOC*a,p,z,a,LOC)
+        #print(f"p = {p}") 
+        #print(f"request_prob = {request_prob(p,z,a,LOC)}")
+        #print(f"return_prob = {return_prob(zf-z+p-LOC*a,p,z,a,LOC)}")
 
     return sum
 
-
-def p(sf,s,a):
+def compute_loc_P(LOC):
     """
-    Returns p(s'|s,a)
+    Compute p[z'][z][a] matrix which entries are p(z'|z,a)
+    z = x for LOC = LOC1 and z = y for LOC = LOC2
     """
-    xf,yf = sf
-    x,y = s
+    n = dimension()
+    n_a = number_actions()
+    A_ = action_map()
 
-    return p_fat(xf,x,a,LOC_1) * p_fat(yf,y,a,LOC_2)
+    if(LOC == LOC_1): LABEL = 1
+    else: LABEL = 2
 
+    P = np.zeros((n,n,n_a))
+    for _zf in range(n):
+        for _z in range(n):
+            for _a in range(n_a):
+                zf = _zf
+                z = _z
+                a = A_[_a]
+                P[_zf][_z][_a] = loc_prob_transition(zf,z,a,LOC)
+                print(f"p{LABEL}({zf}|{z},{a}) = {P[_zf][_z][_a]}")
+
+    return P
+
+def valid_action(a,x,y):
+    COND1 = a <= x
+    COND2 = a >= -y
+    COND3 = x-a <= MAX_CARS
+    COND4 = y+a <= MAX_CARS
+    return COND1 and COND2 and COND3 and COND4
 
 def compute_P():
     """
@@ -174,18 +197,30 @@ def compute_P():
     n_s = number_states()
     n_a = number_actions()
 
-    S_ = S_map()
-    A_ = A_map()
+    S_ = state_map()
+    A_ = action_map()
 
+    P1 = compute_loc_P(LOC_1) 
+    P2 = compute_loc_P(LOC_2) 
     P = np.zeros((n_s,n_s,n_a))
+
     for _sf in range(n_s):
         for _s in range(n_s):
             for _a in range(n_a):
                 s = S_[_s] 
                 sf = S_[_sf]
                 a = A_[_a]
+
+                _xf,_yf = sf
+                _x,_y = s
+                x,y = _x, _y
                 #compute p(s'|s,a)
-                P[_sf][_s][_a] = p(S_,A_,sf,s,a)
+                if(valid_action(a,x,y)): 
+                    P[_sf][_s][_a] = P1[_xf][_x][_a] * P2[_yf][_y][_a]
+                else:
+                    P[_sf][_s][_a] = 0 
+                
+                print(f"p({sf}|{s},{a}) = {P[_sf,_s,_a]}")
     return P
 
 def gamma():
@@ -202,15 +237,11 @@ def threshold():
 
 def print_V(V):
     n = dimension() 
-    hbar = "-" * 45
-    print(hbar)
     for x in range(n):
-        print("|", end = "")
         for y in range(n):
             i = n * x + y
-            print("{:7.2f}".format(V[i]), end = " |")
+            print("{:7.1f}".format(V[i]), end = " ")
         print()
-        print(hbar)
 
 if __name__ == "__main__":
     print("Test suit")
@@ -223,7 +254,68 @@ if __name__ == "__main__":
     #print(S_map())
 
     print("Actions map:")
-    print(A_map())
+    print(action_map())
+
+    #print("Probability matrix:")
+    P = compute_P()
+    #print(P)
+
+    #print("testing sum_prob = 1 for the big matrix")
+    #n_s = number_states()
+    #n_a = number_actions()
+    #for _s in range(n_s):
+    #    for _a in range(n_a):
+    #        A_ = action_map()
+    #        S_ = state_map()
+    #        a = A_[_a]
+    #        s = S_[_s] 
+
+    #        x, y = S_[_s]
+    #        if(not(valid_action(a,x,y))): continue
+
+    #        sum = 0
+    #        for _sf in range(n_s):
+    #            sum += P[_sf][_s][_a]
+    #        
+    #        print(f"sum(p(s'|{s},{a})) = {sum}")
+
+    #testing sum_prob = 1 for individual locations
+    #P1 = compute_loc_P(LOC_2)
+    #for _x in range(dimension()):
+    #    for _a in range(number_actions()):
+    #        A_ = action_map()
+    #        a = A_[_a]
+    #        x = _x
+    #        sum = 0
+    #        for _xf in range(dimension()):
+    #            xf = _xf
+    #            sum += P1[_xf][_x][_a]
+    #        print(f"sum(p(x'|{x},{a})) = {sum}")
+
+
+    #print(loc_prob_transition(0,0,-5,LOC_1))
+    
+    #testing sum_prob = 1 for request probs 
+    #n_a = number_actions()
+    #A_ = action_map()
+    #for _x in range(dimension()):
+    #    for _a in range(n_a):
+    #        sum = 0
+    #        x = _x
+    #        a = A_[_a]
+    #        _max_requests = max_requests(x,a,LOC_1)
+    #        for p1 in range(_max_requests+1):
+    #            sum += request_prob(p1,x,a,LOC_1)
+    #        print(f"sum(request_prob(p1|{x},{a})) = {sum}")
+    #print("test finalized")
+
+    R = compute_R()
+
+    pi = testing_pi()
+
+
+
+
 
 
 
